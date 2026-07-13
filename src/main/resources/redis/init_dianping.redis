@@ -1,0 +1,5 @@
+DEL seckill:stock:1
+DEL seckill:order:1
+SET seckill:stock:1 100
+DEL shop:geo:1
+GEOADD shop:geo:1 120.149192 30.316078 1

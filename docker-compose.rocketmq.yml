@@ -1,0 +1,40 @@
+services:
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.2
+    container_name: hmdp-rocketmq-namesrv
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+    networks:
+      - hmdp-rocketmq
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.2
+    container_name: hmdp-rocketmq-broker
+    command: sh mqbroker -n rocketmq-namesrv:9876 -c /home/rocketmq/rocketmq-5.3.2/conf/broker.conf
+    depends_on:
+      - rocketmq-namesrv
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    volumes:
+      - ./docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.3.2/conf/broker.conf
+    networks:
+      - hmdp-rocketmq
+
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: hmdp-rocketmq-dashboard
+    depends_on:
+      - rocketmq-namesrv
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv:9876"
+    ports:
+      - "8088:8082"
+    networks:
+      - hmdp-rocketmq
+
+networks:
+  hmdp-rocketmq:
+    driver: bridge
