@@ -1,5 +1,5 @@
-# 黑马点评（hm-dianping）
-
+# ShopLink
+### 技术栈:基于 Spring Boot、Mybatis-Plus、Redis、Lua、RocketMQ，caffeine 的本地生活服务与高并发秒杀系统。
 一个面向本地学习与接口联调的点评业务项目，包含 Spring Boot 后端和 Vue 3 测试前端。
 
 ## 项目亮点
