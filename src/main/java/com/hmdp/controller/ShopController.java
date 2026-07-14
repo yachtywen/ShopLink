@@ -5,6 +5,9 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
+import com.hmdp.ratelimit.annotation.LimitRule;
+import com.hmdp.ratelimit.annotation.RateLimit;
+import com.hmdp.ratelimit.annotation.RateLimitScope;
 import com.hmdp.service.IShopService;
 import com.hmdp.utils.SystemConstants;
 import org.springframework.web.bind.annotation.*;
@@ -66,6 +69,9 @@ public class ShopController {
      * @return 商铺列表
      */
     @GetMapping("/of/type")
+    @RateLimit(key = "shop-type-search", rules = {
+            @LimitRule(scope = RateLimitScope.IP, limit = 120, windowSeconds = 60)
+    })
     public Result queryShopByType(
             @RequestParam("typeId") Integer typeId,
             @RequestParam(value = "current", defaultValue = "1") Integer current,
@@ -82,6 +88,9 @@ public class ShopController {
      * @return 商铺列表
      */
     @GetMapping("/of/name")
+    @RateLimit(key = "shop-name-search", rules = {
+            @LimitRule(scope = RateLimitScope.IP, limit = 120, windowSeconds = 60)
+    })
     public Result queryShopByName(
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "current", defaultValue = "1") Integer current

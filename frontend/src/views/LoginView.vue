@@ -1,0 +1,14 @@
+<script setup lang="ts">
+import { computed, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, type FormInstance } from 'element-plus'
+import { userApi } from '@/api/user'
+import { useAuthStore } from '@/stores/auth'
+const router = useRouter(); const route = useRoute(); const auth = useAuthStore(); const formRef = ref<FormInstance>(); const sending = ref(false); const count = ref(0); const form = reactive({ phone: '', code: '' })
+const codeText = computed(() => count.value ? `${count.value}s 后重试` : '发送验证码')
+const phoneRule = /^1[3-9]\d{9}$/
+async function sendCode() { if (!phoneRule.test(form.phone)) return ElMessage.warning('请输入正确的手机号'); sending.value = true; try { await userApi.sendCode(form.phone); ElMessage.success('验证码已发送，请查看后端日志'); count.value = 60; const timer = window.setInterval(() => { count.value--; if (!count.value) clearInterval(timer) }, 1000) } finally { sending.value = false } }
+async function submit() { await formRef.value?.validate(); await auth.login(form); ElMessage.success('登录成功'); router.replace((route.query.redirect as string) || '/') }
+</script>
+<template><main class="login-page"><section class="login-hero"><div><span class="badge">HM DIANPING</span><h1>让接口调试<br />更接近真实产品。</h1><p>Vue 3 · Vite · Nginx · Spring Boot</p></div></section><section class="login-panel"><el-card shadow="never"><h2 data-testid="login-title">登录联调台</h2><p>验证码会输出至后端 debug 日志，有效期 2 分钟。</p><el-form ref="formRef" :model="form" label-position="top"><el-form-item label="手机号" prop="phone" :rules="[{ required: true, message: '请输入手机号' }, { pattern: phoneRule, message: '手机号格式不正确' }]" ><el-input id="phone-input" v-model="form.phone" placeholder="13800138000" size="large" /></el-form-item><el-form-item label="验证码" prop="code" :rules="[{ required: true, message: '请输入验证码' }]"><div class="code-row"><el-input id="code-input" v-model="form.code" placeholder="6 位验证码" size="large" /><el-button :disabled="Boolean(count)" :loading="sending" @click="sendCode">{{ codeText }}</el-button></div></el-form-item><el-button id="login-submit" type="primary" size="large" class="full" @click="submit">登录</el-button></el-form><el-button link class="full" @click="router.push('/')">暂不登录，浏览公开接口</el-button></el-card></section></main></template>
+<style scoped>.login-page{min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr;background:#fff}.login-hero{display:grid;place-items:center;background:radial-gradient(circle at 20% 20%,#fb923c,#9a3412 55%,#172554);color:#fff}.badge{font-size:12px;letter-spacing:2px;color:#fed7aa}.login-hero h1{font-size:48px;line-height:1.2;margin:18px 0}.login-hero p{color:#fed7aa}.login-panel{display:grid;place-items:center}.login-panel .el-card{width:390px;border:0}.login-panel h2{margin:0;font-size:28px}.login-panel p{color:#64748b;font-size:13px;margin-bottom:28px}.code-row{display:flex;width:100%;gap:10px}.code-row .el-input{flex:1}.full{width:100%;margin-top:10px}</style>

@@ -5,7 +5,7 @@ spring:
     name: hmdp
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3307/dianping?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://127.0.0.1:3307/dianping?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: 123456
   redis:
@@ -33,3 +33,21 @@ rocketmq:
 hmdp:
   mq:
     retry-fixed-delay: 5000
+  rate-limit:
+    # Keep false for direct local access. Enable only when requests always pass through a trusted proxy.
+    trust-forwarded-headers: false
+  cache:
+    shop:
+      local:
+        # L1 is intentionally shorter than Redis (L2) so a missed invalidation is bounded.
+        ttl-seconds: 60
+        max-size: 10000
+      bloom:
+        name: cache:bloom:shop:v1
+        expected-insertions: 100000
+        false-probability: 0.01
+    voucher:
+      local:
+        # Static voucher metadata only; live seckill stock remains in Redis.
+        ttl-seconds: 60
+        max-size: 10000

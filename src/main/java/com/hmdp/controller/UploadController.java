@@ -3,6 +3,9 @@ package com.hmdp.controller;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.hmdp.dto.Result;
+import com.hmdp.ratelimit.annotation.LimitRule;
+import com.hmdp.ratelimit.annotation.RateLimit;
+import com.hmdp.ratelimit.annotation.RateLimitScope;
 import com.hmdp.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +21,11 @@ import java.util.UUID;
 public class UploadController {
 
     @PostMapping("blog")
+    @RateLimit(key = "blog-upload", rules = {
+            @LimitRule(scope = RateLimitScope.GLOBAL, limit = 120, windowSeconds = 60),
+            @LimitRule(scope = RateLimitScope.IP, limit = 30, windowSeconds = 60),
+            @LimitRule(scope = RateLimitScope.USER, limit = 20, windowSeconds = 60)
+    })
     public Result uploadImage(@RequestParam("file") MultipartFile image) {
         try {
             // 获取原始文件名称

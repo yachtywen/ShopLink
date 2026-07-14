@@ -49,6 +49,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <!-- L1 local cache for hot shop-detail reads. Redis remains the L2 distributed cache. -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.9.3</version>
+        </dependency>
 
         <dependency>
             <groupId>mysql</groupId>
@@ -59,6 +69,8 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <!-- 1.18.20 does not support the project's JDK 17 build runtime. -->
+            <version>1.18.32</version>
             <optional>true</optional>
         </dependency>
         <dependency>

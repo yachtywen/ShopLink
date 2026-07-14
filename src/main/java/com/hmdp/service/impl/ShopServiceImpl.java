@@ -4,10 +4,12 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
+import com.hmdp.cache.ShopBloomFilterService;
+import com.hmdp.cache.ShopCacheInvalidationEvent;
+import com.hmdp.cache.ShopCacheService;
 import com.hmdp.entity.Shop;
 import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
-import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.SystemConstants;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResult;
@@ -15,13 +17,12 @@ import org.springframework.data.geo.GeoResults;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.domain.geo.GeoReference;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-
 import static com.hmdp.utils.RedisConstants.*;
 
 /**
@@ -40,21 +41,28 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
-    private CacheClient cacheClient;
+    private ShopCacheService shopCacheService;
+
+    @Resource
+    private ShopBloomFilterService shopBloomFilterService;
+
+    @Resource
+    private ApplicationEventPublisher applicationEventPublisher;
+
+    @Override
+    @Transactional
+    public boolean save(Shop shop) {
+        boolean saved = super.save(shop);
+        if (saved) {
+            shopBloomFilterService.add(shop.getId());
+        }
+        return saved;
+    }
 
     @Override
     public Result queryById(Long id) {
-        // 解决缓存穿透
-        Shop shop = cacheClient
-                .queryWithPassThrough(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
-
-        // 互斥锁解决缓存击穿
-        // Shop shop = cacheClient
-        //         .queryWithMutex(CACHE_SHOP_KEY, id, Shop.class, this::getById, CACHE_SHOP_TTL, TimeUnit.MINUTES);
-
-        // 逻辑过期解决缓存击穿
-        // Shop shop = cacheClient
-        //         .queryWithLogicalExpire(CACHE_SHOP_KEY, id, Shop.class, this::getById, 20L, TimeUnit.SECONDS);
+        // Bloom filter -> L1 Caffeine -> L2 Redis Cache-Aside -> MySQL.
+        Shop shop = shopCacheService.queryById(id, this::getById);
 
         if (shop == null) {
             return Result.fail("店铺不存在！");
@@ -71,9 +79,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             return Result.fail("店铺id不能为空");
         }
         // 1.更新数据库
-        updateById(shop);
-        // 2.删除缓存
-        stringRedisTemplate.delete(CACHE_SHOP_KEY + id);
+        boolean updated = updateById(shop);
+        if (!updated) {
+            return Result.fail("店铺不存在！");
+        }
+        // Publish an in-process event. The listener runs only after this transaction commits,
+        // preventing an uncommitted database value from being reloaded into Redis.
+        applicationEventPublisher.publishEvent(new ShopCacheInvalidationEvent(id));
         return Result.ok();
     }
 

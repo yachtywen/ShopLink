@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
+import com.hmdp.ratelimit.annotation.LimitRule;
+import com.hmdp.ratelimit.annotation.RateLimit;
+import com.hmdp.ratelimit.annotation.RateLimitScope;
 import com.hmdp.service.IBlogService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
@@ -28,6 +31,11 @@ public class BlogController {
     private IBlogService blogService;
 
     @PostMapping
+    @RateLimit(key = "blog-create", rules = {
+            @LimitRule(scope = RateLimitScope.GLOBAL, limit = 120, windowSeconds = 60),
+            @LimitRule(scope = RateLimitScope.IP, limit = 20, windowSeconds = 60),
+            @LimitRule(scope = RateLimitScope.USER, limit = 10, windowSeconds = 60)
+    })
     public Result saveBlog(@RequestBody Blog blog) {
         return blogService.saveBlog(blog);
     }
@@ -50,6 +58,9 @@ public class BlogController {
     }
 
     @GetMapping("/hot")
+    @RateLimit(key = "blog-hot", rules = {
+            @LimitRule(scope = RateLimitScope.IP, limit = 120, windowSeconds = 60)
+    })
     public Result queryHotBlog(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         return blogService.queryHotBlog(current);
     }

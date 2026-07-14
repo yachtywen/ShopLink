@@ -1,0 +1,13 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { Connection, Document, Shop } from '@element-plus/icons-vue'
+import { shopApi } from '@/api/shop'
+import { blogApi } from '@/api/blog'
+import type { Blog, ShopType } from '@/types/domain'
+import BlogCard from '@/components/BlogCard.vue'
+import { useRouter } from 'vue-router'
+const router = useRouter(); const types = ref<ShopType[]>([]); const blogs = ref<Blog[]>([]); const loading = ref(true)
+onMounted(async () => { try { [types.value, blogs.value] = await Promise.all([shopApi.types(), blogApi.hot()]) } finally { loading.value = false } })
+</script>
+<template><div class="page-head"><div><h2 data-testid="home-title">接口概览</h2><p class="muted">公开接口可直接访问；需要登录的功能会自动跳转登录页。</p></div><el-tag type="success"><span class="status-dot" />API 8081</el-tag></div><div class="grid grid-3 metrics"><el-card><el-icon><Shop /></el-icon><div><b>{{ types.length || '-' }}</b><span>店铺分类</span></div></el-card><el-card><el-icon><Document /></el-icon><div><b>{{ blogs.length || '-' }}</b><span>热门笔记（本页）</span></div></el-card><el-card><el-icon><Connection /></el-icon><div><b>Docker</b><span>Nginx: 8080</span></div></el-card></div><el-card class="section-card" shadow="never"><template #header><div class="card-title">店铺分类 <el-button link @click="router.push('/shops')">进入店铺中心</el-button></div></template><el-skeleton :loading="loading" animated><div class="type-grid"><button v-for="type in types.slice(0, 12)" :key="type.id" @click="router.push({ name: 'shops', query: { typeId: type.id } })"><el-avatar :src="type.icon">{{ type.name.slice(0,1) }}</el-avatar><span>{{ type.name }}</span></button></div></el-skeleton></el-card><div class="page-head compact"><h2>热门笔记</h2><el-button link @click="router.push('/blogs')">查看全部</el-button></div><div class="grid grid-3"><BlogCard v-for="blog in blogs.slice(0,6)" :key="blog.id" :blog="blog" @open="router.push(`/blogs/${$event}`)" /></div></template>
+<style scoped>.metrics{margin-bottom:22px}.metrics .el-card{display:flex;align-items:center;gap:14px}.metrics .el-icon{font-size:30px;color:#f97316}.metrics b{display:block;font-size:23px}.metrics span{font-size:13px;color:#64748b}.section-card{margin-bottom:24px}.card-title{display:flex;justify-content:space-between;align-items:center;font-weight:600}.type-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.type-grid button{border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px}.type-grid button:hover{border-color:#f97316;color:#c2410c}.type-grid span{font-size:13px}.compact{margin:12px 0}</style>

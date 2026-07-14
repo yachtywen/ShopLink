@@ -7,6 +7,9 @@ import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.entity.UserInfo;
+import com.hmdp.ratelimit.annotation.LimitRule;
+import com.hmdp.ratelimit.annotation.RateLimit;
+import com.hmdp.ratelimit.annotation.RateLimitScope;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
@@ -38,6 +41,10 @@ public class UserController {
      * 发送手机验证码
      */
     @PostMapping("code")
+    @RateLimit(key = "user-code", rules = {
+            @LimitRule(scope = RateLimitScope.GLOBAL, limit = 60, windowSeconds = 60),
+            @LimitRule(scope = RateLimitScope.IP, limit = 5, windowSeconds = 60)
+    })
     public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
         // 发送短信验证码并保存验证码
         return userService.sendCode(phone, session);
@@ -48,6 +55,10 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
+    @RateLimit(key = "user-login", rules = {
+            @LimitRule(scope = RateLimitScope.GLOBAL, limit = 120, windowSeconds = 60),
+            @LimitRule(scope = RateLimitScope.IP, limit = 10, windowSeconds = 60)
+    })
     public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
         // 实现登录功能
         return userService.login(loginForm, session);
