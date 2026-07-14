@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local runtime configuration ###
+.env
+.env.*
+!.env.example
+src/main/resources/application-local.yaml
+
+### Frontend build artifacts ###
+frontend/node_modules/
+frontend/dist/

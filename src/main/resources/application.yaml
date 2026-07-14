@@ -5,9 +5,9 @@ spring:
     name: hmdp
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3307/dianping?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: ${HMDP_DB_URL:jdbc:mysql://127.0.0.1:3307/dianping?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${HMDP_DB_USERNAME:root}
+    password: ${HMDP_DB_PASSWORD:}
   redis:
     host: 127.0.0.1
     port: 6379
